@@ -17,19 +17,19 @@ on:
         type: boolean
     secrets:
       ECR_REGISTRY:
-        required: false
+        required: true
       STAGE_KUBE_CLUSTER_NAME:
-        required: false
+        required: true
       PRODUCTION_KUBE_CLUSTER_NAME:
-        required: false
+        required: true
       KUBE_NAMSPACE:
-        required: false        
+        required: true        
       STAGE_CHART_REGISTRY:
-        required: false
+        required: true
       PRODUCTION_CHART_REGISTRY:
-        required: false
+        required: true
       AWS_REGION:
-        required: false
+        required: true
       NPM_TOKEN:
         required: false        
    
@@ -44,8 +44,6 @@ jobs:
 
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v1
-      env:
-        AWS_REGION: ${{secrets.AWS_REGION}}
       with:
         aws-region: ${{secrets.AWS_REGION}}
 
