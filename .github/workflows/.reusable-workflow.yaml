@@ -32,22 +32,22 @@ on:
         required: true
       NPM_TOKEN:
         required: false        
-   
-env:
-  ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
-  STAGE_KUBE_CLUSTER_NAME: ${{ secrets.STAGE_KUBE_CLUSTER_NAME }}
-  PRODUCTION_KUBE_CLUSTER_NAME: ${{ secrets.PRODUCTION_KUBE_CLUSTER_NAME }}
-  KUBE_NAMSPACE: ${{ secrets.KUBE_NAMSPACE }}
-  STAGE_CHART_REGISTRY: ${{ secrets.STAGE_CHART_REGISTRY }}
-  PRODUCTION_CHART_REGISTRY: ${{ secrets.PRODUCTION_CHART_REGISTRY }}
-  ECR_REPOSITORY: ${{ inputs.ECR_REPOSITORY }}
-  DEPLOYMENT_NAME: ${{ inputs.DEPLOYMENT_NAME }}
-  AWS_REGION: ${{secrets.AWS_REGION}}
 
 jobs:
   build: 
     name: Build
     runs-on: self-hosted
+
+    env:
+      ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+      STAGE_KUBE_CLUSTER_NAME: ${{ secrets.STAGE_KUBE_CLUSTER_NAME }}
+      PRODUCTION_KUBE_CLUSTER_NAME: ${{ secrets.PRODUCTION_KUBE_CLUSTER_NAME }}
+      KUBE_NAMSPACE: ${{ secrets.KUBE_NAMSPACE }}
+      STAGE_CHART_REGISTRY: ${{ secrets.STAGE_CHART_REGISTRY }}
+      PRODUCTION_CHART_REGISTRY: ${{ secrets.PRODUCTION_CHART_REGISTRY }}
+      ECR_REPOSITORY: ${{ inputs.ECR_REPOSITORY }}
+      DEPLOYMENT_NAME: ${{ inputs.DEPLOYMENT_NAME }}
+      AWS_REGION: ${{secrets.AWS_REGION}}
 
     steps:
     - name: Checkout
@@ -106,6 +106,17 @@ jobs:
     name: Deploy
     needs: build
     runs-on: self-hosted
+
+    env:
+      ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+      STAGE_KUBE_CLUSTER_NAME: ${{ secrets.STAGE_KUBE_CLUSTER_NAME }}
+      PRODUCTION_KUBE_CLUSTER_NAME: ${{ secrets.PRODUCTION_KUBE_CLUSTER_NAME }}
+      KUBE_NAMSPACE: ${{ secrets.KUBE_NAMSPACE }}
+      STAGE_CHART_REGISTRY: ${{ secrets.STAGE_CHART_REGISTRY }}
+      PRODUCTION_CHART_REGISTRY: ${{ secrets.PRODUCTION_CHART_REGISTRY }}
+      ECR_REPOSITORY: ${{ inputs.ECR_REPOSITORY }}
+      DEPLOYMENT_NAME: ${{ inputs.DEPLOYMENT_NAME }}
+      AWS_REGION: ${{secrets.AWS_REGION}}
 
     steps:
     - name: Checkout
