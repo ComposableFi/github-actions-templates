@@ -24,5 +24,6 @@ jobs:
       KUBE_NAMSPACE: ${{ secrets.KUBE_NAMSPACE }}
       STAGE_CHART_REGISTRY: ${{ secrets.STAGE_CHART_REGISTRY }}
       PRODUCTION_CHART_REGISTRY: ${{ secrets.PRODUCTION_CHART_REGISTRY }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
       # for npmrc jobs ONLY
       NPM_TOKEN: ${{secrets.NPM_TOKEN}}
