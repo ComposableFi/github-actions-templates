@@ -17,19 +17,19 @@ on:
         type: boolean
     secrets:
       ECR_REGISTRY:
-        required: true
+        required: false
       STAGE_KUBE_CLUSTER_NAME:
-        required: true
+        required: false
       PRODUCTION_KUBE_CLUSTER_NAME:
-        required: true
+        required: false
       KUBE_NAMSPACE:
-        required: true        
+        required: false        
       STAGE_CHART_REGISTRY:
-        required: true
+        required: false
       PRODUCTION_CHART_REGISTRY:
-        required: true
+        required: false
       AWS_REGION:
-        required: true
+        required: false
       NPM_TOKEN:
         required: false        
    
@@ -52,7 +52,7 @@ jobs:
       uses: aws-actions/amazon-ecr-login@v1
 
     - name: Build, tag, and push image to Amazon ECR - DEV
-      if: ${{ github.ref == 'refs/heads/dev' }}
+      if: ${{ github.ref == 'refs/heads/deploy' }}
       env: 
         IMAGE_TAG: dev-${{ github.run_number }}
       run: |
@@ -106,7 +106,7 @@ jobs:
         aws-region: ${{ secrets.AWS_REGION }}
 
     - name: Deploy - DEV
-      if: ${{ github.ref == 'refs/heads/dev' }}
+      if: ${{ github.ref == 'refs/heads/deploy' }}
       env:
         IMAGE_TAG: dev-${{ github.run_number }}
         CHART_NAME: dev-chart
