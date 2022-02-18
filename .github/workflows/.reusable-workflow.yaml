@@ -17,7 +17,7 @@ on:
         type: boolean
     secrets:
       ECR_REGISTRY:
-        required: false
+        # required: false
       STAGE_KUBE_CLUSTER_NAME:
         required: false
       PRODUCTION_KUBE_CLUSTER_NAME:
@@ -29,7 +29,7 @@ on:
       PRODUCTION_CHART_REGISTRY:
         required: false
       AWS_REGION:
-        required: false
+        # required: false
       NPM_TOKEN:
         required: false        
    
