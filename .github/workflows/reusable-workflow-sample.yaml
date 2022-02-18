@@ -9,7 +9,7 @@ on:
 
 jobs:
   publish:
-    uses: composablefi/sre/.github/workflows/.reusable-workflow.yaml@main
+    uses: composablefi/github-actions-templates/.github/workflows/.reusable-workflow.yaml@main
     with:
       ECR_REPOSITORY: composable/repo
       DEPLOYMENT_NAME: deployment
