@@ -1,0 +1,40 @@
+name: DEPLOY SUBGRAPH
+
+on:
+  workflow_call:
+    inputs:
+      NETWORK_NAMES:
+        required: true
+        type: string
+      SUBGRAPH_FOLDER_NAME: 
+        required: true
+        type: string
+    secrets:
+      SUBGRAPH_ACCESS_TOKEN:
+        required: true
+env: 
+  NETWORK_NAMES: ${{ inputs.NETWORK_NAMES }}
+  SUBGRAPH_FOLDER_NAME: ${{ inputs.SUBGRAPH_FOLDER_NAME }}
+  SUBGRAPH_ACCESS_TOKEN: ${{ secrets.SUBGRAPH_ACCESS_TOKEN }}
+
+jobs: 
+  deploy:
+    name: Deploy
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Build and Deploy
+        if: ${{ github.ref == 'refs/heads/dev' }}
+        run: |
+          cd $SUBGRAPH_FOLDER_NAME
+          yarn
+          for network_name in $NETWORK_NAMES ; do 
+            yarn prepare:dev:${network_name}
+            graph codegen
+            graph build
+            graph auth --product hosted-service $SUBGRAPH_ACCESS_TOKEN
+            graph deploy --node https://api.thegraph.com/deploy/ composablefi/dev-${network_name}-${SUBGRAPH_FOLDER_NAME}
+          done
