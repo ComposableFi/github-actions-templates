@@ -26,7 +26,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Build and Deploy
+      - name: DEV - Build and Deploy
         if: ${{ github.ref == 'refs/heads/dev' }}
         run: |
           cd $SUBGRAPH_FOLDER_NAME
@@ -38,3 +38,16 @@ jobs:
             graph auth --product hosted-service $SUBGRAPH_ACCESS_TOKEN
             graph deploy --node https://api.thegraph.com/deploy/ composablefi/dev-${network_name}-${SUBGRAPH_FOLDER_NAME}
           done
+
+      - name: PROD - Build and Deploy
+        if: ${{ github.ref == 'refs/heads/main' }}
+        run: |
+          cd $SUBGRAPH_FOLDER_NAME
+          yarn
+          for network_name in $NETWORK_NAMES ; do 
+            yarn prepare:prod:${network_name}
+            graph codegen
+            graph build
+            graph auth --product hosted-service $SUBGRAPH_ACCESS_TOKEN
+            graph deploy --node https://api.thegraph.com/deploy/ composablefi/prod-${network_name}-${SUBGRAPH_FOLDER_NAME}
+          done          
