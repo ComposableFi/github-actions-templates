@@ -49,5 +49,5 @@ jobs:
             graph codegen
             graph build
             graph auth --product hosted-service $SUBGRAPH_ACCESS_TOKEN
-            graph deploy --node https://api.thegraph.com/deploy/ composablefi/prod-${network_name}-${SUBGRAPH_FOLDER_NAME}
+            graph deploy --node https://api.thegraph.com/deploy/ composablefi/${network_name}-${SUBGRAPH_FOLDER_NAME}
           done          
