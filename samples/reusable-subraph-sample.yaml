@@ -1,0 +1,19 @@
+name: DEPLOY SUBGRAPH mosaic2-rewards
+
+on:
+  workflow_dispatch:
+  push: 
+    branches: 
+      - main
+      - dev
+    paths: 
+      - 'mosaic2-rewards/**'
+
+jobs:
+  publish:
+    uses: ComposableFi/github-actions-templates/.github/workflows/.reusable-subgraph-workflow.yaml@main
+    with:
+      NETWORK_NAMES: "kovan rinkeby"
+      SUBGRAPH_FOLDER_NAME: mosaic2-rewards
+    secrets:
+      SUBGRAPH_ACCESS_TOKEN: ${{ secrets.SUBGRAPH_ACCESS_TOKEN }}
