@@ -1,0 +1,31 @@
+name: Build and Deploy to EKS
+
+on:
+  workflow_dispatch:
+  push: 
+    branches: 
+      - dev
+      - main
+    paths: 
+      - 'apps/transfer-executor/**'  
+      - 'libs/**'
+
+jobs:
+  publish:
+    uses: ComposableFi/github-actions-templates/.github/workflows/.reusable-monorepo.yaml@main
+    with:
+      ECR_REPOSITORY: composable/repo
+      DEPLOYMENT_NAME: deployment
+      APP_NAME: transfers
+      K8S_PATH: apps/pusher-integrations/k8s
+      # for mode deployments ONLY
+      MODES: "transfers withdrawals nfts"
+
+    secrets:
+      ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+      STAGE_KUBE_CLUSTER_NAME: ${{ secrets.STAGE_KUBE_CLUSTER_NAME }}
+      PRODUCTION_KUBE_CLUSTER_NAME: ${{ secrets.PRODUCTION_KUBE_CLUSTER_NAME }}
+      KUBE_NAMSPACE: ${{ secrets.KUBE_NAMSPACE }}
+      STAGE_CHART_REGISTRY: ${{ secrets.STAGE_CHART_REGISTRY }}
+      PRODUCTION_CHART_REGISTRY: ${{ secrets.PRODUCTION_CHART_REGISTRY }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}

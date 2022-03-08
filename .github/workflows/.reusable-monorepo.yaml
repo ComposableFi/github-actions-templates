@@ -1,0 +1,155 @@
+name: Build and Deploy to EKS
+
+on:
+  workflow_call:
+    inputs:
+      ECR_REPOSITORY:
+        required: true
+        type: string
+      DEPLOYMENT_NAME: 
+        required: true
+        type: string
+      APP_NAME: 
+        required: true
+        type: string      
+      K8S_PATH: 
+        required: true
+        type: string      
+      MODES: 
+        required: false
+        type: string  
+    secrets:
+      ECR_REGISTRY:
+        required: true
+      STAGE_KUBE_CLUSTER_NAME:
+        required: true
+      PRODUCTION_KUBE_CLUSTER_NAME:
+        required: true
+      KUBE_NAMSPACE:
+        required: true        
+      STAGE_CHART_REGISTRY:
+        required: true
+      PRODUCTION_CHART_REGISTRY:
+        required: true
+      AWS_REGION:
+        required: true
+
+env:
+  ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+  STAGE_KUBE_CLUSTER_NAME: ${{ secrets.STAGE_KUBE_CLUSTER_NAME }}
+  PRODUCTION_KUBE_CLUSTER_NAME: ${{ secrets.PRODUCTION_KUBE_CLUSTER_NAME }}
+  KUBE_NAMSPACE: ${{ secrets.KUBE_NAMSPACE }}
+  STAGE_CHART_REGISTRY: ${{ secrets.STAGE_CHART_REGISTRY }}
+  PRODUCTION_CHART_REGISTRY: ${{ secrets.PRODUCTION_CHART_REGISTRY }}
+  ECR_REPOSITORY: ${{ inputs.ECR_REPOSITORY }}
+  DEPLOYMENT_NAME: ${{ inputs.DEPLOYMENT_NAME }}
+  K8S_PATH: ${{ inputs.K8S_PATH }}
+  APP_NAME: ${{ inputs.APP_NAME }}
+
+
+jobs: 
+  build: 
+    name: Build
+    runs-on: self-hosted
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-region: ${{ secrets.AWS_REGION }}
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+
+    - name: Build, tag, and push image to Amazon ECR - DEV
+      if: ${{ github.ref == 'refs/heads/dev' }}
+      env: 
+        IMAGE_TAG: dev-${{ github.run_number }}
+      run: |
+        docker build --build-arg app_name=$APP_NAME -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+    - name: Build, tag, and push image to Amazon ECR - PRODUCTION
+      if: ${{ github.ref == 'refs/heads/main' }}
+      env: 
+        IMAGE_TAG: production-${{ github.run_number }}
+      run: |
+        docker build --build-arg app_name=$APP_NAME -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+  deploy: 
+    name: Deploy
+    needs: build
+    runs-on: self-hosted
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-region: ${{ secrets.AWS_REGION }}
+
+    - name: Deploy - DEV
+      if: ${{ github.ref == 'refs/heads/dev' }}
+      env:
+        IMAGE_TAG: dev-${{ github.run_number }}
+        CHART_NAME: dev-chart
+      run: | 
+        aws eks update-kubeconfig --name $STAGE_KUBE_CLUSTER_NAME
+        helm subenv -f ./$K8S_PATH/dev.yaml
+        helm repo add $CHART_NAME $STAGE_CHART_REGISTRY
+        helm repo update $CHART_NAME
+        helm template $DEPLOYMENT_NAME $CHART_NAME/advancedblockchain -n $KUBE_NAMSPACE -f ./$K8S_PATH/dev.yaml
+        helm upgrade -i $DEPLOYMENT_NAME $CHART_NAME/advancedblockchain -n $KUBE_NAMSPACE -f ./$K8S_PATH/dev.yaml 
+
+    - name: Deploy - PRODUCTION
+      if: ${{ github.ref == 'refs/heads/main' }}
+      env:
+        IMAGE_TAG: production-${{ github.run_number }}
+        CHART_NAME: production-chart
+      run: | 
+        aws eks update-kubeconfig --name $PRODUCTION_KUBE_CLUSTER_NAME
+        helm subenv -f ./$K8S_PATH/production.yaml
+        helm repo add $CHART_NAME $PRODUCTION_CHART_REGISTRY
+        helm repo update $CHART_NAME
+        helm template $DEPLOYMENT_NAME $CHART_NAME/advancedblockchain -n $KUBE_NAMSPACE -f ./$K8S_PATH/production.yaml
+        helm upgrade -i $DEPLOYMENT_NAME $CHART_NAME/advancedblockchain -n $KUBE_NAMSPACE -f ./$K8S_PATH/production.yaml
+
+# ---------------------------------------
+# #  MODE JOBS
+# ---------------------------------------
+    - name: Deploy - DEV, MODES
+      if: github.ref == 'refs/heads/dev' && inputs.MODES 
+      env:
+        IMAGE_TAG: dev-${{ github.run_number }}
+        CHART_NAME: dev-chart
+      run: | 
+        aws eks update-kubeconfig --name $STAGE_KUBE_CLUSTER_NAME
+        helm subenv -f ./$K8S_PATH/dev.yaml
+        helm repo add $CHART_NAME $STAGE_CHART_REGISTRY
+        helm repo update $CHART_NAME
+        for modes in ${{INPUTS.MODES}}; do 
+          helm template $DEPLOYMENT_NAME $CHART_NAME/advancedblockchain -n $KUBE_NAMSPACE -f ./$K8S_PATH/dev.yaml --set env.MODES=${modes}
+          helm upgrade -i $DEPLOYMENT_NAME $CHART_NAME/advancedblockchain -n $KUBE_NAMSPACE -f ./$K8S_PATH/dev.yaml --set env.MODES=${modes}
+        done
+
+    - name: Deploy - PRODUCTION, MODES
+      if: github.ref == 'refs/heads/main' && inputs.MODES
+      env:
+        IMAGE_TAG: production-${{ github.run_number }}
+        CHART_NAME: production-chart
+      run: | 
+        aws eks update-kubeconfig --name $PRODUCTION_KUBE_CLUSTER_NAME
+        helm subenv -f ./k8s/production.yaml
+        helm repo add $CHART_NAME $PRODUCTION_CHART_REGISTRY
+        helm repo update $CHART_NAME
+        for modes in ${{INPUTS.MODES}}; do 
+          helm template $DEPLOYMENT_NAME $CHART_NAME/advancedblockchain -n $KUBE_NAMSPACE -f ./$K8S_PATH/production.yaml --set env.MODES=${modes}
+          helm upgrade -i $DEPLOYMENT_NAME $CHART_NAME/advancedblockchain -n $KUBE_NAMSPACE -f ./$K8S_PATH/production.yaml --set env.MODES=${modes}
+        done
